@@ -284,38 +284,50 @@ function loadDrinks() {
   grid.innerHTML = '<div class="loading">Loading cocktails…</div>';
   countEl.textContent = "";
 
+  // Try fetch first (works on most modern mobile browsers via redirect follow)
+  fetch(IDEAS_ENDPOINT + "?action=drinks")
+    .then(r => r.json())
+    .then(drinks => onDrinksLoaded(drinks))
+    .catch(() => {
+      // Fallback to JSONP for browsers that block fetch cross-origin
+      loadDrinksJsonp();
+    });
+}
+
+function loadDrinksJsonp() {
   const cb = "__drinks_" + Math.random().toString(36).slice(2);
   const script = document.createElement("script");
   const cleanup = () => {
     try { delete window[cb]; } catch(e) {}
     if (script.parentNode) script.parentNode.removeChild(script);
   };
-
   window[cb] = (drinks) => {
-    try {
-      DRINKS = Array.isArray(drinks) ? drinks : [];
-      featureWeek = null;   // force feature re-render with fresh data
-      const top10 = DRINKS
-        .filter(d => d.sold > 0)
-        .sort((a,b) => b.sold - a.sold)
-        .slice(0, 10)
-        .map(d => d.name);
-      buildChips();
-      renderFeature();
-      renderTicker(top10.length ? top10 : TOP10_FALLBACK);
-      render();
-    } catch(err) {
-      grid.innerHTML = '<div class="empty"><span>Something went wrong</span>Reload to try again.</div>';
-    } finally { cleanup(); }
+    try { onDrinksLoaded(drinks); }
+    catch(err) { showError(); }
+    finally { cleanup(); }
   };
-
-  script.onerror = () => {
-    cleanup();
-    grid.innerHTML = '<div class="empty"><span>Couldn\'t load drinks</span>Check your connection and reload.</div>';
-  };
-
+  script.onerror = () => { cleanup(); showError(); };
   script.src = IDEAS_ENDPOINT + "?action=drinks&callback=" + cb;
   document.head.appendChild(script);
+}
+
+function onDrinksLoaded(drinks) {
+  DRINKS = Array.isArray(drinks) ? drinks : [];
+  if (!DRINKS.length) { showError(); return; }
+  featureWeek = null;
+  const top10 = DRINKS
+    .filter(d => d.sold > 0)
+    .sort((a,b) => b.sold - a.sold)
+    .slice(0, 10)
+    .map(d => d.name);
+  buildChips();
+  renderFeature();
+  renderTicker(top10.length ? top10 : TOP10_FALLBACK);
+  render();
+}
+
+function showError() {
+  grid.innerHTML = '<div class="empty"><span>Couldn\'t load drinks</span>Check your connection and reload.</div>';
 }
 
 /* Quietly refresh every 15 minutes so sold counts and the DOW stay current. */
