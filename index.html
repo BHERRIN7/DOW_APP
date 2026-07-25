@@ -6,11 +6,11 @@
 <meta name="theme-color" content="#100d09" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Brass Tap-DOW">
+<meta name="apple-mobile-web-app-title" content="Brass Tap">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="manifest" href="manifest.json">
-<title>The Brass Tap — DOW</title>
+<title>The Brass Tap — Cocktail Book</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -114,6 +114,11 @@
   .garnish .em{font-size:22px;flex:none;}
   .prose{color:var(--text);font-size:15.5px;line-height:1.62;}
   .notes{color:var(--text);font-size:15.5px;line-height:1.62;border-left:3px solid var(--brass);background:rgba(217,180,108,.07);padding:13px 16px;border-radius:0 12px 12px 0;}
+  .price-this-week{background:rgba(217,180,108,.18);border-color:var(--brass) !important;}
+  .price-this-week .lab{color:var(--brass-bright) !important;}
+  .price-this-week .val{color:var(--brass-bright) !important;font-size:16px;}
+  .price-off-week .lab{color:var(--faint);}
+  .price-off-week .val{color:var(--muted);}
 
   .fab{position:fixed;z-index:35;right:18px;bottom:calc(20px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;background:var(--brass);color:#1a1207;border:0;font-family:inherit;font-weight:700;font-size:14px;letter-spacing:.01em;padding:14px 19px;border-radius:999px;cursor:pointer;box-shadow:0 14px 32px -8px rgba(217,180,108,.55),0 4px 14px rgba(0,0,0,.45);transition:transform .15s,box-shadow .2s;}
   .fab:hover{transform:translateY(-2px);}
@@ -199,6 +204,25 @@
    Everything else reads from your Google Sheet automatically.
    ============================================================= */
 const IDEAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxMjEy8LSkmr2fT2Bz9l_rcUWQ9nZMuPiGP7mZn-Y25J9OciYZdwNVqJkRYw4cO2vXsmA/exec";
+
+/* Off-week upcharge — change this if the premium price ever changes. */
+const OFF_WEEK_PRICE = "$15.00";
+const DOW_PRICE      = "$13.00";
+
+/** Returns true if drink d is the current week's featured cocktail. */
+function isCurrentWeek(d) {
+  if (!d.week) return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const curr = currentDrink();
+  return curr && curr.name === d.name;
+}
+
+/** Returns the correct price and label for a drink based on today's date. */
+function getPrice(d) {
+  if (isCurrentWeek(d)) return { price: DOW_PRICE,      label: "This Week",  badge: true  };
+  if (!d.week)          return { price: d.price || "—", label: "Price",      badge: false };
+  return                       { price: OFF_WEEK_PRICE,  label: "Off-Week",   badge: false };
+}
 
 /* Fallback Top 10 shown instantly while data loads, and if no sales exist yet. */
 const TOP10_FALLBACK = [
@@ -394,6 +418,8 @@ function openDetail(d) {
     `<div class="ing-row"><span class="dot">◆</span><span class="txt">${esc(x.trim())}</span></div>`).join("");
   const steps = (d.method||"").split("\n").filter(Boolean).map(s =>
     `<li>${esc(s.replace(/^\s*\d+\.\s*/,"").trim())}</li>`).join("");
+  const p = getPrice(d);
+  const priceClass = p.badge ? "price-this-week" : (p.label === "Off-Week" ? "price-off-week" : "");
   sheetBody.innerHTML = `
     <div class="d-head">
       <div class="d-titles">
@@ -406,7 +432,7 @@ function openDetail(d) {
     <div class="specs">
       <div class="spec"><div class="lab">Glass</div><div class="val">${esc(d.glass)}</div></div>
       <div class="spec"><div class="lab">Style</div><div class="val">${esc(d.family)}</div></div>
-      <div class="spec"><div class="lab">Price</div><div class="val">${esc(d.price||"—")}</div></div>
+      <div class="spec ${priceClass}"><div class="lab">${esc(p.label)}</div><div class="val">${esc(p.price)}</div></div>
     </div>
     <div class="block-title">Spec</div>
     <div class="ing">${ings||'<div class="ing-row"><span class="txt">See sheet</span></div>'}</div>
