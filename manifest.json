@@ -1,6 +1,6 @@
 {
-  "name": "The Brass Tap",
-  "short_name": "Brass Tap",
+  "name": "The Brass Tap DOW Recipes",
+  "short_name": "Brass Tap-DOW",
   "description": "Marietta cocktail reference for bartenders",
   "start_url": "/DOW_APP/",
   "display": "standalone",
