@@ -1,0 +1,18 @@
+{
+  "name": "The Brass Tap",
+  "short_name": "Brass Tap",
+  "description": "Marietta cocktail reference for bartenders",
+  "start_url": "/DOW_APP/",
+  "display": "standalone",
+  "background_color": "#100d09",
+  "theme_color": "#d9b46c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
